@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Markiyan Palisa</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400https://fonts.googleapis.com/css2?family=Inter:wght@400&display=swapdisplay=swap" rel="stylesheet">
+  <style>
+
+    /* RESET — remove defaults, hide OS cursor everywhere */
+    *, *::before, *::after {
+      margin: 0; padding: 0;
+      box-sizing: border-box;
+      cursor: none !important;
+    }
+
+    /* COLOURS — change these three to retheme the whole page */
+    :root {
+      --bg:   #D9D9D9; /* light grey — page base */
+      --dark: #3F3F49; /* dark grey  — text */
+      --blue: #0022FF; /* blue       — badge + hover */
+    }
+
+    /* PAGE — full viewport, no scroll, Inter font, -5% tracking globally */
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      font-family: 'Inter', sans-serif;
+      letter-spacing: -0.05em;
+      color: var(--dark);
+    }
+
+    /* ── BACKGROUND ─────────────────────────────────────────────────────── */
+
+    /* BG BASE — full-screen div behind everything */
+    .bg {
+      position: fixed; inset: 0;
+      background: #dedede; /* base colour between dots */
+      z-index: 0;
+    }
+
+    /* DOT GRID — rendered as a CSS repeating background on ::before
+       Change background-size to resize tile (must match JS tileSize)
+       Change the first % (6%) to make dots bigger/smaller
+       Change rgba opacity (0.20) to make dots darker/lighter        */
+    .bg::before {
+      content: "";
+      position: absolute;
+      top: -50%; left: -50%; /* oversized so edges never show on scroll */
+      width: 200%; height: 200%;
+      background:
+        radial-gradient(circle, rgba(63, 63, 73, 0.20) 6%, transparent 1%),
+        radial-gradient(circle, transparent 100%, #3498db 100%);
+      background-size: 50px 50px; /* tile size — match JS tileSize = 50 */
+      background-position: var(--px, 0px) var(--py, 0px); /* driven by JS */
+    }
+
+    /* ── CURSOR ──────────────────────────────────────────────────────────── */
+
+    /* CURSOR CIRCLE — white circle, mix-blend-mode inverts colours beneath it
+       Change width/height to resize
+       mix-blend-mode: difference = inversion effect                         */
+    .cursor {
+      position: fixed;
+      width: 100px; height: 100px;
+      transition: width 0.2s ease, height 0.2s ease;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 99999;
+      transform: translate(-50%, -50%);
+      background: white;
+      mix-blend-mode: difference;
+      will-change: left, top;
+    }
+
+    /* ── TEXT ELEMENTS ───────────────────────────────────────────────────── */
+
+    /* HELLO TEXT — "Hello, My name is" above the scrolling name
+       top: 30vh controls vertical position
+       font-size clamp: (min, fluid, max)                        */
+    .hello {
+      position: fixed;
+      top: 22vh; left: 3.5vw;
+      font-size: clamp(16px, 2.2vw, 34px);
+      font-weight: 400; color: var(--dark); line-height: 1;
+      z-index: 10;
+    }
+
+    /* MARQUEE WRAPPER — clips the scrolling text to viewport width
+       padding-bottom stops descenders (y,g,p) from being cut off */
+    .marquee-wrap {
+      position: fixed;
+      top: 50%; left: 0; width: 100%;
+      transform: translateY(-52%);
+      overflow: hidden;
+      white-space: nowrap;
+      padding-bottom: 0.18em;
+      z-index: 5;
+    }
+
+    /* MARQUEE TRACK — the moving container
+       animation duration = scroll speed (higher = slower)        */
+    .marquee-track {
+      display: inline-flex;
+      animation: scroll 120s linear infinite; /* ← change duration to speed up/slow down */
+    }
+
+    /* MARQUEE TEXT — each repeated name span
+       font-size clamp: (min, fluid vw, max)
+       padding-right keeps gap between repeats visible            */
+    .marquee-track span {
+      font-size: clamp(80px, 20vh, 280px);
+      font-weight: 400; color: var(--dark);
+      letter-spacing: -0.05em;
+      line-height: 1.15;
+      padding-right: 0.25em; /* gap between name repeats */
+    }
+
+    /* MARQUEE ANIMATION — moves left by 50% (= one full copy width) */
+    @keyframes scroll {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    /* BADGE — "[Portfolio is under renovations]" centred on screen
+       pointer-events: none so it never blocks clicks               */
+    .badge {
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--blue); color: #fff;
+      font-size: clamp(16px, 2.2vw, 34px);
+      font-weight: 400;
+      padding: 0.18em 0.5em 0.22em;
+      z-index: 20;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+
+
+    /* ── BOTTOM BAR ──────────────────────────────────────────────────────── */
+
+    /* BOTTOM CONTAINER — three links spread edge-to-edge
+       bottom: 3.5vh = distance from screen bottom
+       padding matches left margin of .hello                        */
+    .bottom {
+      position: fixed;
+      bottom: 3.5vh; left: 0; width: 100%;
+      display: flex;
+      justify-content: space-between; /* spreads items across full width */
+      padding: 0 3.5vw;
+      z-index: 10;
+    }
+
+    /* BOTTOM LINK BLOCK — each clickable two-line item
+       transition: color for smooth hover                           */
+    .bottom-item {
+      display: flex; flex-direction: column;
+      align-items: flex-start;
+      text-decoration: none;
+      color: var(--dark);
+      transition: color 0.2s ease;
+    }
+
+    /* HOVER STATE — both lines turn blue and underline */
+    .bottom-item:hover span {
+      color: var(--blue);
+      text-decoration: underline;
+    }
+
+    /* BOTTOM TEXT — each line inside the link block
+       font-size clamp: (min, fluid vw, max)
+       line-height: 1.1 = tight two-line stacking                   */
+    .bottom-item span {
+      font-size: clamp(10px, 1.2vw, 18px);
+      font-weight: 400; color: var(--dark);
+      line-height: 1.1;
+    }
+
+    /* LINK RESET — no underline, inherit colour, no cursor */
+    a { color: inherit; text-decoration: none; cursor: none !important; }
+
+  </style>
+</head>
+<body>
+
+  <!-- BACKGROUND — dot grid, animated by JS via --px / --py CSS vars -->
+  <div class="bg" id="bg"></div>
+
+  <!-- CURSOR — white circle with invert blend mode, positioned by JS -->
+  <div class="cursor" id="cursor"></div>
+
+  <!-- HELLO TEXT -->
+  <div class="hello">Hello, My name is</div>
+
+  <!-- SCROLLING NAME — 16 copies ensure seamless loop at any screen size -->
+  <div class="marquee-wrap">
+    <div class="marquee-track">
+      <span>— Markiyan Palisa </span>
+      <span>— Markiyan Palisa </span>
+      <span>— Markiyan Palisa </span>
+      <span>— Markiyan Palisa </span>
+      <span>— Markiyan Palisa </span>
+      <span>— Markiyan Palisa </span>
+      <span>— Markiyan Palisa </span>
+      <span>— Markiyan Palisa </span>
+      <span>— Markiyan Palisa </span>
+      <span>— Markiyan Palisa </span>
+      <span>— Markiyan Palisa </span>
+      <span>— Markiyan Palisa </span>
+      <span>— Markiyan Palisa </span>
+      <span>— Markiyan Palisa </span>
+      <span>— Markiyan Palisa </span>
+      <span>— Markiyan Palisa </span>
+    </div>
+  </div>
+
+  <!-- STATUS BADGE — centred, non-interactive -->
+  <div class="badge">[Portfolio is under renovations]</div>
+
+
+  <!-- BOTTOM LINKS — update hrefs with real URLs -->
+  <div class="bottom">
+
+    <!-- Link 1: current job — update href to employer URL -->
+    <a class="bottom-item" href="https://theturnnlab.com" target="_blank">
+      <span>Current Position</span>
+      <span>Digital Designer @ The Turn Lab</span>
+    </a>
+
+    <!-- Link 2: project video — replace # with real video URL -->
+    <a class="bottom-item" href="#">
+      <span>Let's connect:</span>
+      <span>Connect with me on LinkedIn</span>
+    </a>
+
+    <!-- Link 3: email contact -->
+    <a class="bottom-item" href="/cdn-cgi/l/email-protection#4f2c20213b2e2c3b0f222e3d2426362e21612b2a3c262821">
+      <span>Contact me:</span>
+      <span><span class="__cf_email__" data-cfemail="40232f2e34212334002d21322b2939212e6e24253329272e">contact@markiyan.design</span></span>
+    </a>
+
+  </div>
+
+  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+
+    /* ── BACKGROUND DOT GRID ────────────────────────────────────────────────
+       Mouse position → velocity → shifts CSS background-position each frame.
+       Centre of screen = no movement. Edges = max speed.
+
+       To tweak:
+         tileSize  — must match CSS background-size px value
+         maxSpeed  — higher = faster drift (px per frame)
+         Math.pow(dist, 1.5) — exponent: higher = more aggressive edge curve */
+
+    const bg       = document.getElementById('bg');
+    const tileSize = 50;   /* px — match CSS background-size */
+    const maxSpeed = 0.6;  /* px per frame — drift speed at screen edge */
+
+    let dx = 0, dy = 0;     /* velocity vector, updated on mousemove */
+    let posX = 0, posY = 0; /* current background offset, accumulates each frame */
+
+    bg.addEventListener('mousemove', (e) => {
+      const rect = bg.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width  - 0.5) * 2; /* -1 to 1 */
+      const y = ((e.clientY - rect.top)  / rect.height - 0.5) * 2; /* -1 to 1 */
+
+      const dist = Math.min(Math.sqrt(x*x + y*y) / Math.SQRT2, 1); /* 0=centre, 1=corner */
+      const len  = Math.sqrt(x*x + y*y) || 1;
+      const nx = x / len; /* normalised direction X */
+      const ny = y / len; /* normalised direction Y */
+
+      const speed = maxSpeed * Math.pow(dist, 1.5); /* speed curve — aggressive at edges */
+      dx = nx * speed;
+      dy = ny * speed;
+    });
+
+    /* ── CURSOR ─────────────────────────────────────────────────────────────
+       Tracks raw mouse position with zero delay (no lerp).
+       CSS transform: translate(-50%,-50%) keeps the circle centred on pointer. */
+
+    const cursor = document.getElementById('cursor');
+    let mouseX = -200, mouseY = -200; /* off-screen default avoids 0,0 flash */
+
+    // Shrink cursor on link hover
+    document.querySelectorAll('a, .bottom-item').forEach(el => {
+      el.addEventListener('mouseenter', () => {
+        cursor.style.width = '40px';
+        cursor.style.height = '40px';
+      });
+      el.addEventListener('mouseleave', () => {
+        cursor.style.width = '100px';
+        cursor.style.height = '100px';
+      });
+    });
+
+    document.addEventListener('mousemove', e => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+    });
+
+    /* ── ANIMATION LOOP — single RAF drives both bg + cursor ────────────────
+       posX/posY wrap modulo tileSize for seamless infinite scroll.
+       ((x % n) + n) % n handles negatives correctly (JS % can be negative). */
+
+    function animate() {
+      /* background shift */
+      posX += dx;
+      posY += dy;
+      posX = ((posX % tileSize) + tileSize) % tileSize; /* wrap within one tile */
+      posY = ((posY % tileSize) + tileSize) % tileSize;
+      bg.style.setProperty('--px', `${posX}px`);
+      bg.style.setProperty('--py', `${posY}px`);
+
+      /* cursor positioning */
+      cursor.style.left = mouseX + 'px';
+      cursor.style.top  = mouseY + 'px';
+
+      requestAnimationFrame(animate);
+    }
+    animate();
+  </script>
+</body>
+</html>
