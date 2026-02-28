@@ -30,8 +30,9 @@
     /* BACKGROUND */
     .bg {
       position: fixed; inset: 0;
-      background: #dedede;
+      background: var(--bg);
       z-index: 0;
+      transition: background 0.5s ease;
     }
 
     .bg::before {
@@ -40,7 +41,7 @@
       top: -50%; left: -50%;
       width: 200%; height: 200%;
       background:
-        radial-gradient(circle, rgba(63,63,73,0.20) 6%, transparent 1%),
+        radial-gradient(circle, color-mix(in srgb, var(--dark) 20%, transparent) 6%, transparent 1%),
         radial-gradient(circle, transparent 100%, transparent 100%);
       background-size: 50px 50px;
       background-position: var(--px, 0px) var(--py, 0px);
@@ -66,7 +67,9 @@
       top: 22vh; left: 3.5vw;
       font-size: clamp(16px, 2.2vw, 34px);
       font-weight: 400;
+      color: var(--dark);
       z-index: 10;
+      transition: color 0.5s ease;
     }
 
     /* MARQUEE */
@@ -94,6 +97,7 @@
       line-height: 1.15;
       padding-right: 0.25em;
       user-select: none;
+      transition: color 0.5s ease;
     }
 
     @keyframes scroll {
@@ -106,13 +110,14 @@
       position: fixed;
       top: 50%; left: 50%;
       transform: translate(-50%, -50%);
-      background: var(--blue); color: #fff;
+      background: var(--blue); color: var(--bg);
       font-size: clamp(16px, 2.2vw, 34px);
       font-weight: 400;
       padding: 0.18em 0.5em 0.22em;
       z-index: 20;
       pointer-events: none;
       white-space: nowrap;
+      transition: background 0.5s ease;
     }
 
     /* BOTTOM BAR */
@@ -130,6 +135,11 @@
       align-items: flex-start;
       text-decoration: none;
       color: var(--dark);
+      background: none;
+      border: none;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+      letter-spacing: -0.05em;
       transition: color 0.2s ease;
     }
 
@@ -143,6 +153,7 @@
       font-weight: 400;
       color: var(--dark);
       line-height: 1.1;
+      transition: color 0.5s ease;
     }
 
     a { color: inherit; text-decoration: none; cursor: none !important; }
@@ -162,14 +173,10 @@
     </div>
   </div>
 
-  <div class="badge">[Portfolio is under renovations]</div>
+  <div class="badge" id="badge">[Portfolio is under renovations]</div>
 
   <div class="bottom">
-    <a class="bottom-item" href="https://theturnnlab.com" target="_blank">
-      <span>Current Position</span>
-      <span>Digital Designer @ The Turn Lab</span>
-    </a>
-    <a class="bottom-item" href="#" target="_blank">
+    <a class="bottom-item" href="https://www.linkedin.com/in/markiyan-palisa/" target="_blank">
       <span>Let's connect:</span>
       <span>Connect with me on LinkedIn</span>
     </a>
@@ -177,20 +184,74 @@
       <span>Contact me:</span>
       <span>contact@markiyan.design</span>
     </a>
+    <button class="bottom-item" id="themeToggle">
+      <span>Appearance:</span>
+      <span>[CHANGE THEME]</span>
+    </button>
   </div>
 
   <script>
 
-    /* ── MARQUEE — auto-fill then clone for seamless loop ── */
-    const track = document.getElementById('track');
+    /* ── THEMES — exact colors from palette screenshot ── */
+    const themes = [
+      { name: 'default',                  bg: '#D9D9D9', dark: '#3F3F49', blue: '#0022FF' },
+      { name: 'cozy-neutral-chic',        bg: '#EEE0D6', dark: '#B07E80', blue: '#B07E80' },
+      { name: 'sun-kissed-serenity',      bg: '#F03E3E', dark: '#F9E236', blue: '#FFFFFF' },
+      { name: 'midnight-sun-fun',         bg: '#0A0A0A', dark: '#0B1628', blue: '#F5A800' },
+      { name: 'silent-night',             bg: '#0A0A0A', dark: '#F5F3EC', blue: '#A8A080' },
+      { name: 'bubblegum-dream',          bg: '#E8604A', dark: '#112240', blue: '#C8D8D5' },
+      { name: 'serene-blue-sky',          bg: '#D6EEFF', dark: '#1A3A5C', blue: '#87CEEB' },
+      { name: 'mermaid-bubblegum',        bg: '#E0FBF0', dark: '#3ECFB2', blue: '#F0907A' },
+      { name: 'ethereal-ivory',           bg: '#DEC9AF', dark: '#F5EDE0', blue: '#E8EDE6' },
+      { name: 'lemon-zest-delight',       bg: '#4A5C28', dark: '#3A4E20', blue: '#F0F5D8' },
+      { name: 'deep-teal',                bg: '#0A6E6E', dark: '#3AADA0', blue: '#E8F5F5' },
+    ];
 
-    // Fill until wider than 2x screen
+    let currentIndex = 0;
+
+    // Luminance helper for contrast check
+    function luminance(hex) {
+      const r = parseInt(hex.slice(1,3),16)/255;
+      const g = parseInt(hex.slice(3,5),16)/255;
+      const b = parseInt(hex.slice(5,7),16)/255;
+      const toL = c => c <= 0.03928 ? c/12.92 : Math.pow((c+0.055)/1.055, 2.4);
+      return 0.2126*toL(r) + 0.7152*toL(g) + 0.0722*toL(b);
+    }
+
+    function contrastRatio(a, b) {
+      const l1 = luminance(a), l2 = luminance(b);
+      return (Math.max(l1,l2)+0.05) / (Math.min(l1,l2)+0.05);
+    }
+
+    function applyTheme(index) {
+      const t = themes[index];
+      const root = document.documentElement;
+      root.style.setProperty('--bg',   t.bg);
+      root.style.setProperty('--dark', t.dark);
+      root.style.setProperty('--blue', t.blue);
+
+      // Pick badge text: use --bg if contrast vs --blue is ok, else use --dark
+      const badge = document.getElementById('badge');
+      const contrastWithBg   = contrastRatio(t.blue, t.bg);
+      const contrastWithDark = contrastRatio(t.blue, t.dark);
+      badge.style.color = contrastWithBg >= contrastWithDark ? t.bg : t.dark;
+    }
+
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      let next;
+      do {
+        next = Math.floor(Math.random() * themes.length);
+      } while (next === currentIndex);
+      currentIndex = next;
+      applyTheme(currentIndex);
+    });
+
+    /* ── MARQUEE ── */
+    const track = document.getElementById('track');
     while (track.scrollWidth < window.innerWidth * 2) {
       track.innerHTML += '<span>— Markiyan Palisa </span>';
     }
-    // Clone the whole thing — now -50% = exactly one full set
     track.innerHTML += track.innerHTML;
-
 
     /* ── BACKGROUND DOT GRID ── */
     const bg       = document.getElementById('bg');
@@ -210,7 +271,6 @@
       dx = (x / len) * speed;
       dy = (y / len) * speed;
     });
-
 
     /* ── CURSOR ── */
     const cursor = document.getElementById('cursor');
@@ -232,7 +292,6 @@
       mouseY = e.clientY;
     });
 
-
     /* ── ANIMATION LOOP ── */
     function animate() {
       posX += dx;
@@ -247,6 +306,7 @@
 
       requestAnimationFrame(animate);
     }
+    applyTheme(0);
     animate();
 
   </script>
